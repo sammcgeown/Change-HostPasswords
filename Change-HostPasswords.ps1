@@ -29,7 +29,7 @@ $NewRootCredential = new-object -typename System.Management.Automation.PSCredent
 $NewRootCredentialVerify = new-object -typename System.Management.Automation.PSCredential -argumentlist "root",$NewPasswordVerify
 
 # Connect to the vCenter server
-Connect-VIServer $vCenter
+Connect-VIServer $vCenter | Out-Null
 
 # Create an object for the root account with the new pasword
 $RootAccount = New-Object VMware.Vim.HostPosixAccountSpec
@@ -37,11 +37,8 @@ $RootAccount.id = "root"
 $RootAccount.password = ($NewRootCredential.GetNetworkCredential().Password)
 $RootAccount.shellAccess = "/bin/bash"
 
-# Get the hosts from the Location
-$VMHosts = Get-VMHost -Location $Location
-
-# For each host
-$VMHosts | % {
+# Get the hosts from the Location and for each host
+Get-VMHost -Location $Location | % {
 	# Disconnect any connected sessions - prevents errors getting multiple ServiceInstances
 	$global:DefaultVIServers | Disconnect-VIServer -Confirm:$false
 	Write-Debug ($_.Name + " - attempting to connect")
