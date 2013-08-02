@@ -1,15 +1,21 @@
-Param (	$vCenter = (Read-Host "Enter Virtual Center"),
-		$Location = (Read-Host "Enter VMHost Location (can be a vCenter, DataCenter, Cluster or * for all)"),
-		$RootPassword = (Read-Host "Enter current root password" -AsSecureString),
-		$NewPassword = (Read-Host "Enter new root password" -AsSecureString),
-		$NewPasswordVerify = (Read-Host "Enter new root password" -AsSecureString)
+Param (	[String] $vCenter 					= (Read-Host "Enter Virtual Center"),
+		[String] $Location 					= (Read-Host "Enter VMHost Location (can be a vCenter, DataCenter, Cluster or * for all)"),
+		[SecureString] $RootPassword 		= (Read-Host "Enter current root password" -AsSecureString),
+		[SecureString] $NewPassword 		= (Read-Host "Enter new root password" -AsSecureString),
+		[SecureString] $NewPasswordVerify 	= (Read-Host "Re-enter new root password" -AsSecureString)
 )
+
+# Test that the new password and verified one match, if not abort!
+if($NewPassword -ne $NewPasswordVerify) {
+	Throw "Entered passwords do not match"
+}
 
 # Define a log file
 $LogFile = "Change-HostPasswords.csv"
 # Rename the old log file, if it exists
 if(Test-Path $LogFile) {
-	Move-Item $LogFile "$LogFile.old" -Force -Confirm:$false
+	$DateString = Get-Date((Get-Item $LogFile).LastWriteTIme) -format MMddyyyy
+	Move-Item $LogFile "$LogFile.$DateString.csv" -Force -Confirm:$false
 }
 # Add some CSV headers to the log file
 Add-Content $Logfile "Date,Location,Host,Result"
@@ -21,12 +27,6 @@ Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Confirm:$false | Out
 $RootCredential = new-object -typename System.Management.Automation.PSCredential -argumentlist "root",$RootPassword
 $NewRootCredential = new-object -typename System.Management.Automation.PSCredential -argumentlist "root",$NewPassword
 $NewRootCredentialVerify = new-object -typename System.Management.Automation.PSCredential -argumentlist "root",$NewPasswordVerify
-
-# Test that the new password and verified one match, if not abort!
-if(($NewRootCredential.GetNetworkCredential().Password) -ne ($NewRootCredentialVerify.GetNetworkCredential().Password)) {
-	throw "Passwords do not match!!!"
-}
-
 
 # Connect to the vCenter server
 Connect-VIServer $vCenter
