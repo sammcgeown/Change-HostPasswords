@@ -5,6 +5,15 @@ Param (	[String] $vCenter 					= (Read-Host "Enter Virtual Center"),
 		[System.Security.SecureString] $NewPasswordVerify 	= (Read-Host "Re-enter new root password" -AsSecureString)
 )
 
+<#
+    .SYNOPSIS 
+      Displays a list of WMI Classes based upon a search criteria
+    .EXAMPLE
+     Get-WmiClasses -class disk -ns root\cimv2"
+     This command finds wmi classes that contain the word disk. The 
+     classes returned are from the root\cimv2 namespace.
+  #>
+
 # Define a log file
 $LogFile = "Change-HostPasswords.csv"
 # Rename the old log file, if it exists
@@ -38,8 +47,9 @@ $RootAccount.id = "root"
 $RootAccount.password = ($NewRootCredential.GetNetworkCredential().Password)
 $RootAccount.shellAccess = "/bin/bash"
 
+$VMHosts = Get-VMHost -Location $Location
 # Get the hosts from the Location and for each host
-Get-VMHost -Location $Location | % {
+$VMHosts | % {
 	# Disconnect any connected sessions - prevents errors getting multiple ServiceInstances
 	$global:DefaultVIServers | Disconnect-VIServer -Confirm:$false
 	Write-Debug ($_.Name + " - attempting to connect")
